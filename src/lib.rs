@@ -2,13 +2,13 @@
 #![deny(missing_docs)]
 #![deny(unused)]
 
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::error::Error as StdError;
-use std::path::Path;
-use std::env;
-use std::io::{self, Write};
-use std::process;
 use std::borrow::Cow;
+use std::env;
+use std::error::Error as StdError;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::io::{self, Write};
+use std::path::Path;
+use std::process;
 
 /// A minimalist error type to use in CLI scripts: it wraps an arbitrary cause which implements
 /// `std::error::Error` and a description for the `Display` implementation.
@@ -155,9 +155,10 @@ fn print_cause(prefix: &str, error: &StdError, max_recursion: usize) {
 
 fn run_impl<E, F>(main: F) -> i32
     where F: FnOnce() -> Result<(), E>,
-          E: StdError
+          E: Into<Box<StdError>>
 {
     if let Err(error) = main() {
+        let error = error.into();
         let argv0 = env::args().next();
         let program_name = argv0.as_ref()
                                 .and_then(|s| Path::new(s).file_name())
@@ -165,7 +166,7 @@ fn run_impl<E, F>(main: F) -> i32
         let prefix = program_name.as_ref().map(|s| &**s).unwrap_or("<unknown>");
 
         if writeln!(io::stderr(), "{}: {}", prefix, error).is_ok() {
-            print_cause(prefix, &error, MAX_CAUSE_RECURSION);
+            print_cause(prefix, &*error, MAX_CAUSE_RECURSION);
         }
         1
     } else {
@@ -177,31 +178,9 @@ fn run_impl<E, F>(main: F) -> i32
 ///
 /// If `main` returns an error, it displays it (and all its causes recursively) to `stderr` and
 /// exists the process with 1.
-///
-/// Example:
-///
-/// ```norust
-///     use clierr::Error;
-///
-///     fn foo() -> bool { false }
-///
-///     fn run() -> Result<(), Error> {
-///         if foo() {
-///             Ok(())
-///         } else {
-///             Error::with_description("couldn't foo!")
-///         }
-///     }
-///
-///     fn main() {
-///         // Any vars defined here won't have their destructors run, so better keep `main()`
-///         // dumb.
-///         run_and_exit(run)
-///     }
-/// ```
 pub fn run_and_exit<E, F>(main: F) -> !
     where F: FnOnce() -> Result<(), E>,
-          E: StdError
+          E: Into<Box<StdError>>
 {
     process::exit(run_impl(main))
 }
@@ -241,11 +220,13 @@ macro_rules! ctry {
 #[macro_export]
 macro_rules! ccheck {
     ($e:expr, $fmt:expr) => {
+        use $crate::Error;
         if !($e) {
             return Err(Error::with_description($fmt)).into();
         }
     };
     ($e:expr, $fmt:expr, $($arg:tt)*) => {
+        use $crate::Error;
         if !($e) {
             return Err(Error::with_description(format!($fmt, $($arg)*))).into();
         }
@@ -264,6 +245,10 @@ mod test {
 
     fn err() -> Result<(), Error> {
         Err(Error::with_description("test"))
+    }
+
+    fn err_box() -> Result<(), Box<StdError>> {
+        Err(Box::new(Error::with_description("test")))
     }
 
     #[test]
@@ -376,5 +361,10 @@ mod test {
     #[test]
     fn run_returns_one_for_error() {
         assert_eq!(run_impl(err), 1);
+    }
+
+    #[test]
+    fn run_returns_one_for_error_box() {
+        assert_eq!(run_impl(err_box), 1);
     }
 }
