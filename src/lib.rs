@@ -27,17 +27,17 @@ impl Error {
     /// With a `&'static str`:
     ///
     /// ```
-    ///    # use clierr::Error;
-    ///    # let some_error = Error::with_description("x");
+    /// # use clierr::Error;
+    /// # let some_error = Error::with_description("x");
     /// Error::new("oh no!", some_error);
     /// ```
     ///
     /// With a `String`:
     ///
     /// ```
-    ///    # use clierr::Error;
-    ///    # let some_error = Error::with_description("x");
-    ///    # let filename = "file.txt";
+    /// # use clierr::Error;
+    /// # let some_error = Error::with_description("x");
+    /// # let filename = "file.txt";
     /// Error::new(format!("should not have tried to open '{}'!", filename), some_error);
     /// ```
     pub fn new<S, E>(description: S, cause: E) -> Error
@@ -177,7 +177,7 @@ pub fn run_and_exit<E, F>(main: F) -> !
 /// Example:
 ///
 /// ```norust
-///     ctry!(File::open(filename), "could not open output file {}", filename)
+/// ctry!(File::open(filename), "could not open output file {}", filename)
 /// ```
 ///
 /// Note: If you don't like macros, the `DescribeErr` trait already cuts on a lot of verbosity.
@@ -199,7 +199,7 @@ macro_rules! ctry {
 /// Example:
 ///
 /// ```norust
-///     ccheck!(value(key) == 42, "value of {} was not 42 ({})", key, value(key))
+/// ccheck!(value(key) == 42, "value of {} was not 42 ({})", key, value(key))
 /// ```
 ///
 /// Note: If you don't like macros, the `DescribeErr` trait already cuts on a lot of verbosity.
