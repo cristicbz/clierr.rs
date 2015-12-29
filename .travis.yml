@@ -1,0 +1,14 @@
+language: rust
+
+sudo: false
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+script:
+  - rustc --version
+  - cargo build
+  - cargo test
+
