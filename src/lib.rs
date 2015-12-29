@@ -219,18 +219,18 @@ macro_rules! ctry {
 /// Note: If you don't like macros, the `DescribeErr` trait already cuts on a lot of verbosity.
 #[macro_export]
 macro_rules! ccheck {
-    ($e:expr, $fmt:expr) => {
+    ($e:expr, $fmt:expr) => {{
         use $crate::Error;
         if !($e) {
             return Err(Error::with_description($fmt)).into();
         }
-    };
-    ($e:expr, $fmt:expr, $($arg:tt)*) => {
+    }};
+    ($e:expr, $fmt:expr, $($arg:tt)*) => {{
         use $crate::Error;
         if !($e) {
             return Err(Error::with_description(format!($fmt, $($arg)*))).into();
         }
-    }
+    }}
 }
 
 #[cfg(test)]
