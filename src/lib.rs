@@ -222,13 +222,13 @@ macro_rules! ccheck {
     ($e:expr, $fmt:expr) => {{
         use $crate::Error;
         if !($e) {
-            return Err(Error::with_description($fmt)).into();
+            return Err(Error::with_description($fmt).into());
         }
     }};
     ($e:expr, $fmt:expr, $($arg:tt)*) => {{
         use $crate::Error;
         if !($e) {
-            return Err(Error::with_description(format!($fmt, $($arg)*))).into();
+            return Err(Error::with_description(format!($fmt, $($arg)*)).into());
         }
     }}
 }
