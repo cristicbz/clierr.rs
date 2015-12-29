@@ -110,7 +110,13 @@ impl<S, E: StdError + 'static> DescribeErr for Result<S, E> {
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         if let Some(description) = self.description.as_ref() {
-            write!(fmt, "{}", description)
+            write!(fmt, "{}", description).and_then(|_| {
+                if let Some(cause) = self.cause() {
+                    write!(fmt, "\n    caused by: {}", cause)
+                } else {
+                    Ok(())
+                }
+            })
         } else if let Some(cause) = self.cause() {
             write!(fmt, "{}", cause)
         } else {
@@ -135,24 +141,6 @@ impl StdError for Error {
     }
 }
 
-const MAX_CAUSE_RECURSION: usize = 32;
-
-fn print_cause(prefix: &str, error: &StdError, max_recursion: usize) {
-    if max_recursion == 0 {
-        // We've recursed too many times; don't want to overflow so bail here. Ignore any errors.
-        let _ = writeln!(io::stderr(), "{}:    ...", prefix);
-    } else if let Some(cause) = error.cause() {
-        // Display the current cause, and recurse if (a) the current cause is caused by another
-        // error and (b) the write to stderr didn't fail the first time.
-        if writeln!(io::stderr(), "{}:    caused by: {}", prefix, cause).is_err() {
-            return;
-        }
-
-        // Hopefully tail recursive, but not a big deal if not.
-        print_cause(prefix, cause, max_recursion - 1);
-    }
-}
-
 fn run_impl<E, F>(main: F) -> i32
     where F: FnOnce() -> Result<(), E>,
           E: Into<Box<StdError>>
@@ -165,9 +153,7 @@ fn run_impl<E, F>(main: F) -> i32
                                 .map(|os| os.to_string_lossy());
         let prefix = program_name.as_ref().map(|s| &**s).unwrap_or("<unknown>");
 
-        if writeln!(io::stderr(), "{}: {}", prefix, error).is_ok() {
-            print_cause(prefix, &*error, MAX_CAUSE_RECURSION);
-        }
+        let _ = writeln!(io::stderr(), "{}: {}", prefix, error).is_ok();
         1
     } else {
         0
@@ -257,8 +243,8 @@ mod test {
         let with_owned = Error::new("test2".to_owned(),
                                     Error::caused_by(Error::with_description("cause2")));
 
-        assert_eq!(&format!("{}", with_static), "test");
-        assert_eq!(&format!("{}", with_owned), "test2");
+        assert_eq!(&format!("{}", with_static), "test\n    caused by: cause");
+        assert_eq!(&format!("{}", with_owned), "test2\n    caused by: cause2");
         assert_eq!(with_static.description(), "test");
         assert_eq!(with_owned.description(), "test2");
 
