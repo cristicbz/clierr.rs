@@ -9,4 +9,3 @@ repository = "https://github.com/cristicbz/clierr.rs"
 readme = "README.md"
 keywords = ["cli", "error", "handling", "minimalist", "small"]
 license = "Apache-2.0"
-license-file = "LICENSE"
