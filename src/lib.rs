@@ -216,6 +216,7 @@ pub fn run_and_exit<E, F>(main: F) -> !
 /// ```
 ///
 /// Note: If you don't like macros, the `DescribeErr` trait already cuts on a lot of verbosity.
+#[macro_export]
 macro_rules! ctry {
     ($e:expr, $fmt:expr) => {{
         use $crate::DescribeErr;
@@ -237,6 +238,7 @@ macro_rules! ctry {
 /// ```
 ///
 /// Note: If you don't like macros, the `DescribeErr` trait already cuts on a lot of verbosity.
+#[macro_export]
 macro_rules! ccheck {
     ($e:expr, $fmt:expr) => {
         if !($e) {
